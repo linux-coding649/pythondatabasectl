@@ -1,0 +1,193 @@
+#!/usr/bin/python3
+import json
+import os
+import sys
+
+DATABASE_FILE = 'pydata.db.json'
+DEFAULT_DB = {'master':{}, 'test':{}}
+DATABASE = {}
+
+def read_db(dbfile):
+    db = open(dbfile, 'r')
+    data = db.read()
+    db_data = json.loads(data)
+    return db_data
+
+def rewrite_db(dbfile, data):
+    db = open(dbfile, 'r+')
+    db.truncate(0)
+    fdata = json.dumps(data, sort_keys=True, indent=4)
+    db.write(fdata)
+    db.close()
+def create_db(dbfile):
+    try:
+        db = open(dbfile, 'x')
+    except FileExistsError:
+        print('File exists. ERROR FileExistsError Raised. Aborting...')
+        sys.exit(1)
+    fdata = json.dumps(DEFAULT_DB, sort_keys=True, indent=4)
+    db.write(fdata)
+    db.close()
+def view_db(db):
+    fdb = json.dumps(db, sort_keys=True, indent=4)
+    print(fdb)
+
+print('PYTHONDATABASECTL: reading out database...')
+try:
+    DATABASE = read_db(DATABASE_FILE)
+except FileNotFoundError:
+    print('Database does not exist. Creating database...')
+    create_db(DATABASE_FILE)
+    DATABASE = DEFAULT_DB
+
+print('PYTHONDATABASECTL: complete!')
+print('PYTHONDATABASECTL: to exit, type \'quit\' or \'exit\'')
+print('PYTHONDATABASECTL: starting database terminal...')
+
+while True:
+    cmd = input('PYTHONDATABASECTL>')
+    if cmd == 'help':
+        print('''commands:
+               help                  | Shows this help menu
+               defaultdb             | Defaults the database
+               viewdb                | Views the database
+               addntbl2db            | Adds a table to the database
+               add2db                | Adds new keys and values to the database
+               updatev2db            | Updates a value on a key in the database
+               remove4mdb            | Removes a key or table and it\'s value(s)
+               write2db              | Writes the database into the database file without exiting the database terminal
+               exit                  | Writes the database into the database file and exits the database terminal
+               quit                  | Does the same thing as exit
+               ''')
+        continue
+    elif cmd == 'defaultdb':
+        sure1 = input('PYTHONDATABASECTL: are you sure you want to default the entire database (y/N):')
+        sure2 = input('PYTHONDATABASECTL: are you REALLY sure you want to default the entire database (y/N):')
+        if sure1 == 'y' and sure2 == 'y':
+            DATABASE = DEFAULT_DB
+            continue
+        else:
+            print('PYTHONDATABASECTL: database unchanged')
+            continue
+    elif cmd == 'viewdb':
+        view_db(DATABASE)
+        continue
+    elif cmd == 'addntbl2db':
+        dbname = input('PYTHONDATABASECTL: database to put table in (master/test):')
+        if dbname != 'master' and dbname != 'test':
+            print('PYTHONDATABASECTL: no such database')
+            continue
+        else:
+            tblname = input('PYTHONDATABASECTL: name for the new table:')
+            if tblname in DATABASE[dbname].keys():
+                print('PYTHONDATABASECTL: key or table name already exists')
+                continue
+            else:
+                DATABASE[dbname][tblname] = {}
+                continue
+    elif cmd == 'add2db':
+        dbname = input('PYTHONDATABASECTL: database to select (master/test):')
+        if dbname != 'master' and dbname != 'test':
+            print('PYTHONDATABASECTL: no such database')
+            continue
+        else:
+            tblname = input('PYTHONDATABASECTL: table to put key and value in (none/table_name...):')
+            if tblname == 'none':
+                newkey = input('PYTHONDATABASECTL: new key name:')
+                if newkey in DATABASE[dbname].keys():
+                    print('PYTHONDATABASECTL: key or table name already exists')
+                    continue
+                else:
+                    newval = input('PYTHONDATABASECTL: new key\'s value:')
+                    DATABASE[dbname][newkey] = newval
+                    continue
+            else:
+                newkey = input('PYTHONDATABASECTL: new key name:')
+                if newkey in DATABASE[dbname][tblname].keys():
+                    print('PYTHONDATABASECTL: key name already exists')
+                    continue
+                else:
+                    newval = input('PYTHONDATABASECTL: new key\'s value:')
+                    try:
+                        DATABASE[dbname][tblname][newkey] = newval
+                    except Exception:
+                        print('PYTHONDATABASECTL: error while adding value. database unchanged.')
+                    continue
+    elif cmd == 'updatev2db':
+        dbname = input('PYTHONDATABASECTL: database to select (master/test):')
+        if dbname != 'master' and dbname != 'test':
+            print('PYTHONDATABASECTL: no such database')
+            continue
+        else:
+            tblname = input('PYTHONDATABASECTL: table where key is (none/table_name...):')
+            if tblname == 'none':
+                key = input('PYTHONDATABASECTL: key name:')
+                if key not in DATABASE[dbname].keys():
+                    print('PYTHONDATABASECTL: key name does not exist')
+                    continue
+                else:
+                    newval = input('PYTHONDATABASECTL: key\'s new value:')
+                    DATABASE[dbname][key] = newval
+                    continue
+            else:
+                key = input('PYTHONDATABASECTL: key name:')
+                if key not in DATABASE[dbname][tblname].keys():
+                    print('PYTHONDATABASECTL: key name does not exist')
+                    continue
+                else:
+                    newval = input('PYTHONDATABASECTL: key\'s new value:')
+                    try:
+                        DATABASE[dbname][tblname][key] = newval
+                    except Exception:
+                        print('PYTHONDATABASECTL: error while updating value. database unchanged')
+                    continue
+    elif cmd == 'remove4mdb':
+        dbname = input('PYTHONDATABASECTL: database to select (master/test):')
+        if dbname != 'master' and dbname != 'test':
+            print('PYTHONDATABASECTL: no such database')
+            continue
+        else:
+            tblname = input('PYTHONDATABASECTL: table with key to remove in (none/table_name...):')
+            if tblname == 'none':
+                key = input('PYTHONDATABASECTL: key name:')
+                if key not in DATABASE[dbname].keys():
+                    print('PYTHONDATABASECTL: key or table name does not exist')
+                    continue
+                else:
+                    sure1 = input('PYTHONDATABASECTL: are you sure you want to delete this key/table (y/N):')
+                    sure2 = input('PYTHONDATABASECTL: are you REALLY sure you want to delete this key/table (y/N):')
+                    if sure1 == 'y' and sure2 =='y':
+                        del DATABASE[dbname][key]
+                        continue
+                    else:
+                        print('PYTHONDATABASECTL: key and value undeleted')
+                        continue
+            else:
+                key = input('PYTHONDATABASECTL: key name:')
+                if key not in DATABASE[dbname][tblname].keys():
+                    print('PYTHONDATABASECTL: key name does not exist')
+                    continue
+                else:
+                    sure1 = input('PYTHONDATABASECTL: are you sure you want to delete this key (y/N):')
+                    sure2 = input('PYTHONDATABASECTL: are you REALLY sure you want to delete this key (y/N):')
+                    if sure1 == 'y' and sure2 =='y':
+                        try:
+                            del DATABASE[dbname][tblname][key]
+                        except Exception:
+                            print('PYTHONDATABASECTL: error while removing key and value. database unchanged')
+                        continue
+                    else:
+                        print('PYTHONDATABASECTL: key and value undeleted')
+                        continue
+
+    elif cmd == 'write2db':
+        rewrite_db(DATABASE_FILE, DATABASE)
+        continue
+    elif cmd == 'exit' or cmd == 'quit':
+        rewrite_db(DATABASE_FILE, DATABASE)
+        print('PYTHONDATABASECTL: exiting...')
+        break
+    else:
+        print('PYTHONDATABASECTL: CNF')
+        continue
+
