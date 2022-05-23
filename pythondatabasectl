@@ -187,6 +187,14 @@ while True:
         rewrite_db(DATABASE_FILE, DATABASE)
         print('PYTHONDATABASECTL: exiting...')
         break
+    elif cmd == 'abort':
+        sure1 = input('PYTHONDATABASECTL: are you sure you want to exit without saving the database (y/N):')
+        sure2 = input('PYTHONDATABASECTL:are you REALLY sure you want to exit without saving the database (y/N):')
+        if sure1 == 'y' and sure2 == 'y':
+            print('PYTHONDATABASECTL: exiting with signal NO_SAVE_DB....')
+            break
+        else:
+            continue
     else:
         print('PYTHONDATABASECTL: CNF')
         continue
