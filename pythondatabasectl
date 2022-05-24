@@ -4,8 +4,10 @@ import os
 import sys
 
 DATABASE_FILE = 'pydata.db.json'
+BACKUP_DATABASE_FILE = 'pydata.db.json.bak'
 DEFAULT_DB = {'master':{}, 'test':{}}
 DATABASE = {}
+
 
 def read_db(dbfile):
     db = open(dbfile, 'r')
@@ -49,6 +51,7 @@ while True:
     if cmd == 'help':
         print('''commands:
                help                  | Shows this help menu
+               bkupdb                | Back-ups the database
                defaultdb             | Defaults the database
                viewdb                | Views the database
                addntbl2db            | Adds a table to the database
@@ -58,7 +61,16 @@ while True:
                write2db              | Writes the database into the database file without exiting the database terminal
                exit                  | Writes the database into the database file and exits the database terminal
                quit                  | Does the same thing as exit
+               abort                 | Exits the database terminal without saving the database
                ''')
+        continue
+    elif cmd == 'bkupdb':
+        try:
+            rewrite_db(BACKUP_DATABASE_FILE, DATABASE)
+        except FileNotFoundError:
+            create_db(BACKUP_DATABASE_FILE)
+            rewrite_db(BACKUP_DATABASE_FILE, DATABASE)
+        print('PYTHONDATABASECTL: backed-up database')
         continue
     elif cmd == 'defaultdb':
         sure1 = input('PYTHONDATABASECTL: are you sure you want to default the entire database (y/N):')
@@ -189,9 +201,9 @@ while True:
         break
     elif cmd == 'abort':
         sure1 = input('PYTHONDATABASECTL: are you sure you want to exit without saving the database (y/N):')
-        sure2 = input('PYTHONDATABASECTL:are you REALLY sure you want to exit without saving the database (y/N):')
+        sure2 = input('PYTHONDATABASECTL: are you REALLY sure you want to exit without saving the database (y/N):')
         if sure1 == 'y' and sure2 == 'y':
-            print('PYTHONDATABASECTL: exiting with signal NO_SAVE_DB....')
+            print('PYTHONDATABASECTL: exiting with signal NO_SAVE_DB...')
             break
         else:
             continue
